@@ -2,22 +2,10 @@ import { NextResponse } from 'next/server'
 
 const SYSTEM_PROMPT = `You are ReactionAI, a chemistry learning assistant. Answer the user's question accurately, safely, and briefly in easy English. Explain the key idea first. If the user asks about a reaction, mention the likely product and why. If the user provides SMILES, interpret it only when confident. Do not claim predictions are experimentally verified. Avoid dangerous operational synthesis instructions; keep safety notes high-level.
 
-Return ONLY valid JSON in this exact shape: {"answer":"short clear answer","keyPoint":"one short takeaway","safetyNote":"optional high-level safety note or empty string"}. Do not use markdown code fences. Keep answer under 120 words.`
+Return only a short, direct answer in plain text. Use simple English, with at most three short paragraphs. Do not return JSON, markdown code fences, internal reasoning, or long lists. Keep the answer under 120 words.`
 
 function text(value: unknown) {
   return typeof value === 'string' ? value.trim() : ''
-}
-
-function parseModelJson(content: string) {
-  const cleaned = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
-  try {
-    return JSON.parse(cleaned) as Record<string, unknown>
-  } catch {
-    const start = cleaned.indexOf('{')
-    const end = cleaned.lastIndexOf('}')
-    if (start >= 0 && end > start) return JSON.parse(cleaned.slice(start, end + 1)) as Record<string, unknown>
-    return { answer: cleaned }
-  }
 }
 
 export async function POST(request: Request) {
@@ -39,7 +27,6 @@ export async function POST(request: Request) {
         model: process.env.GROQ_MODEL?.trim() || 'llama-3.3-70b-versatile',
         temperature: 0.2,
         max_tokens: 300,
-        response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: `Answer in ${language}. Use ${mode} level. User question: ${input}` },
@@ -60,9 +47,8 @@ export async function POST(request: Request) {
     const payload = await response.json()
     const content = text(payload?.choices?.[0]?.message?.content)
     if (!content) throw new Error('The model returned an empty answer.')
-    const parsed = parseModelJson(content)
-    const answer = text(parsed.answer) || content
-    return NextResponse.json({ answer, keyPoint: text(parsed.keyPoint), safetyNote: text(parsed.safetyNote) })
+    const answer = content.replace(/^```(?:text|markdown)?\s*/i, '').replace(/\s*```$/i, '').trim()
+    return NextResponse.json({ answer, keyPoint: '', safetyNote: '' })
   } catch (error) {
     const message = error instanceof DOMException && error.name === 'TimeoutError' ? 'Groq took too long to respond. Please try again.' : 'The prediction service could not complete the request. Please try again.'
     return NextResponse.json({ error: message }, { status: 502 })
