@@ -3,8 +3,8 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'ReactionAI — Plan synthesis in seconds',
-  description: 'Affordable AI-powered reaction prediction and retrosynthesis for Indian chemistry.',
+  title: 'ReactionAI — Your chemistry thinking partner',
+  description: 'Ask chemistry questions, explore reaction logic, and learn with clear AI-powered explanations.',
   generator: 'ReactionAI',
   icons: {
     icon: [
