@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
       body: JSON.stringify({
-        model: process.env.GROQ_MODEL?.trim() || 'llama-3.3-70b-versatile',
+        model: 'llama-3.1-8b-instant',
         temperature: 0.2,
         max_tokens: 300,
         messages: [
