@@ -155,12 +155,6 @@ The project is connected to Vercel and can be deployed from the Vercel dashboard
 - Test both desktop and mobile layouts before shipping.
 - Do not add real API keys to source control.
 
-## Continue with v0
-
-This repository is linked to the v0 project for ReactionAI. Continue iterating on the project here:
-
-[Open the ReactionAI v0 project](https://v0.app/chat/projects/prj_9KsuUINtRwFPW4RQObsuwErSfRcc)
-
 ## License
 
 No license has been specified yet. Add a license before distributing or accepting external contributions.
