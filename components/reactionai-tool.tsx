@@ -1,49 +1,45 @@
 'use client'
 
 import { useState } from 'react'
-import { AlertTriangle, FlaskConical, Loader2, Sparkles, Zap } from 'lucide-react'
+import { saveReaction } from '@/app/actions/history'
 
-type Prediction = { answer?: string; keyPoint?: string; safetyNote?: string }
+type Result = { answer: string }
+
+const examples = ['CCO.CC(=O)O', 'What happens when ethanol reacts with ethanoic acid?', 'Suggest starting materials for aspirin.']
 
 export function ReactionTool() {
   const [input, setInput] = useState('')
-  const [mode, setMode] = useState<'student' | 'research'>('student')
-  const [language, setLanguage] = useState('english')
-  const [loading, setLoading] = useState(false)
+  const [mode, setMode] = useState<'forward' | 'retrosynthesis'>('forward')
+  const [learningMode, setLearningMode] = useState(true)
+  const [result, setResult] = useState<Result | null>(null)
   const [error, setError] = useState('')
-  const [result, setResult] = useState<Prediction | null>(null)
+  const [feedback, setFeedback] = useState('')
+  const [loading, setLoading] = useState(false)
 
   async function predict() {
-    const question = input.trim()
-    if (!question) { setError('Please enter a chemistry question or SMILES string.'); return }
-    setLoading(true); setError(''); setResult(null)
+    if (!input.trim()) return setError('Enter a reaction question, reactants, or target molecule.')
+    setLoading(true); setError(''); setResult(null); setFeedback('')
     try {
-      const response = await fetch('/api/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ input: question, mode, language }) })
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data.error || 'The prediction service is unavailable.')
-      if (!data.answer) throw new Error('The model returned an empty answer. Please try again.')
-      setResult(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'The prediction failed. Please try again.')
-    } finally { setLoading(false) }
+      const response = await fetch('/api/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ input, mode, learningMode }) })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Prediction failed.')
+      setResult({ answer: data.answer })
+      try { await saveReaction({ title: input.slice(0, 80), mode, query: input, result: data }) } catch { /* sign-in is optional */ }
+    } catch (err) { setError(err instanceof Error ? err.message : 'The prediction service is unavailable.') } finally { setLoading(false) }
   }
 
-  return <section id="try-tool" className="mx-auto w-full max-w-4xl scroll-mt-24 px-4 py-16 sm:px-6 lg:px-8">
-    <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-[0_24px_80px_rgba(30,58,95,0.10)]">
-      <div className="flex flex-col gap-4 border-b border-border bg-secondary/50 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7">
-        <div><div className="mb-2 flex items-center gap-2 text-sm font-semibold text-primary"><FlaskConical className="size-4" /> Prediction workspace</div><h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Ask a chemistry question</h2></div>
-        <div className="flex rounded-lg border border-border bg-background p-1 text-sm"><button type="button" onClick={() => setMode('student')} className={`rounded-md px-3 py-2 ${mode === 'student' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Student</button><button type="button" onClick={() => setMode('research')} className={`rounded-md px-3 py-2 ${mode === 'research' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Research</button></div>
-      </div>
-      <div className="p-5 sm:p-8">
-        <textarea value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && event.keyCode !== 229) { event.preventDefault(); void predict() } }} className="min-h-36 w-full resize-y rounded-xl border border-input bg-background p-4 text-base outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="Ask about a reaction, mechanism, molecule, or chemistry concept..." aria-label="Chemistry question" />
-        <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground"><span className="py-1">Try:</span>{['Why does esterification need acid?', 'Predict the product of an SN2 reaction', 'What is the structure of aspirin?'].map((example) => <button key={example} type="button" onClick={() => setInput(example)} className="rounded-full border border-border px-3 py-1 transition hover:border-primary hover:text-primary">{example}</button>)}</div>
-        <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><label className="text-sm font-medium">Language<select value={language} onChange={(event) => setLanguage(event.target.value)} className="mt-2 block rounded-lg border border-input bg-background px-3 py-2 font-normal"><option value="english">English</option><option value="hindi">Hindi</option><option value="both">Both</option></select></label><button type="button" onClick={() => void predict()} disabled={loading} className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent px-6 font-semibold text-accent-foreground transition hover:brightness-95 disabled:cursor-wait disabled:opacity-70 sm:min-w-52">{loading ? <><Loader2 className="size-4 animate-spin" /> Asking Groq...</> : <><Zap className="size-4" /> Ask ReactionAI</>}</button></div>
-        {error && <div role="alert" className="mt-5 flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"><AlertTriangle className="mt-0.5 size-4 shrink-0" /><div><p className="font-semibold">Something went wrong</p><p className="mt-1">{error}</p></div></div>}
-        {loading && <p className="mt-8 flex items-center gap-2 text-sm text-muted-foreground" aria-live="polite"><Loader2 className="size-4 animate-spin" /> Reading your question and preparing a clear answer...</p>}
-        {result && <div className="mt-8 rounded-2xl border border-border bg-background p-5 sm:p-6" aria-live="polite"><div className="flex items-center gap-2 text-sm font-semibold text-accent"><Sparkles className="size-4" /> ReactionAI answer</div><p className="mt-4 whitespace-pre-wrap text-base leading-7 text-foreground">{result.answer}</p>{result.keyPoint && <p className="mt-5 rounded-xl bg-secondary p-4 text-sm font-medium leading-6"><span className="text-primary">Key point: </span>{result.keyPoint}</p>}{result.safetyNote && <p className="mt-4 text-sm leading-6 text-muted-foreground"><span className="font-semibold text-foreground">Safety: </span>{result.safetyNote}</p>}</div>}
-      </div>
-    </div>
-  </section>
+  async function sendFeedback(rating: 'up' | 'down') {
+    setFeedback(rating)
+    await fetch('/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ route: '/api/predict', rating, correction: input }) }).catch(() => undefined)
+  }
+
+  function download() {
+    if (!result) return
+    const blob = new Blob([`ReactionAI\n\nInput: ${input}\nMode: ${mode}\n\n${result.answer}`], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'reactionai-result.txt'; link.click(); URL.revokeObjectURL(url)
+  }
+
+  return <section id="workspace" className="border-y border-border bg-card/70 py-16"><div className="mx-auto max-w-6xl px-5 sm:px-8"><div className="mb-8"><p className="font-mono text-xs uppercase tracking-[0.2em] text-primary">Prediction workspace</p><h2 className="mt-2 text-3xl font-bold tracking-tight">Ask the reaction desk.</h2><p className="mt-2 max-w-2xl text-muted-foreground">Enter a natural-language question, reactants, or SMILES. You will receive a likely reaction, mechanism, precautions, hazards, and disposal guidance.</p></div><div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]"><div className="rounded-xl border bg-background p-5"><div className="flex flex-wrap gap-2"><button type="button" onClick={() => setMode('forward')} className={`rounded-full border px-3 py-1.5 text-sm ${mode === 'forward' ? 'border-primary bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Forward reaction</button><button type="button" onClick={() => setMode('retrosynthesis')} className={`rounded-full border px-3 py-1.5 text-sm ${mode === 'retrosynthesis' ? 'border-primary bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Retrosynthesis</button></div><label className="mt-6 block text-sm font-semibold" htmlFor="chemistry-question">{mode === 'forward' ? 'Reactants or question' : 'Target molecule or question'}</label><textarea id="chemistry-question" value={input} onChange={(event) => setInput(event.target.value)} placeholder={mode === 'forward' ? 'Example: What happens when ethanol reacts with ethanoic acid?' : 'Example: Suggest simple starting materials for aspirin.'} className="mt-2 min-h-40 w-full resize-y rounded-lg border bg-card p-3 text-sm outline-none ring-primary focus:ring-2" /><p className="mt-3 text-xs leading-5 text-muted-foreground">SMILES tip: separate multiple reactants with a period, for example <code className="rounded bg-secondary px-1 py-0.5 font-mono">CCO.CC(=O)O</code>.</p><div className="mt-3 flex flex-wrap gap-2">{examples.map((example) => <button type="button" key={example} onClick={() => setInput(example)} className="rounded border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-secondary">{example}</button>)}</div><label className="mt-5 flex items-center gap-2 text-sm text-muted-foreground"><input type="checkbox" checked={learningMode} onChange={(event) => setLearningMode(event.target.checked)} /> Student Learning Mode</label><button type="button" onClick={() => void predict()} disabled={loading} className="mt-5 w-full rounded-lg bg-primary px-4 py-3 font-semibold text-primary-foreground disabled:opacity-60">{loading ? 'Reading the reaction…' : 'Ask ReactionAI'}</button>{error && <p role="alert" className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}</div><div className="min-h-80 rounded-xl border bg-background p-5"><div className="flex items-center justify-between gap-4"><h3 className="font-semibold">Result</h3>{result && <button type="button" onClick={download} className="text-sm font-semibold text-primary underline">Download text</button>}</div>{result ? <><div className="mt-5 whitespace-pre-wrap text-sm leading-7 text-foreground">{result.answer}</div><div className="mt-6 flex items-center gap-3 border-t pt-4 text-sm text-muted-foreground"><span>Was this useful?</span><button type="button" onClick={() => void sendFeedback('up')} className="rounded border px-3 py-1 hover:bg-secondary">Yes</button><button type="button" onClick={() => void sendFeedback('down')} className="rounded border px-3 py-1 hover:bg-secondary">Needs correction</button>{feedback && <span className="text-primary">Thanks</span>}</div></> : <div className="flex min-h-64 items-center justify-center text-center text-sm leading-6 text-muted-foreground">Your concise chemistry explanation will appear here.<br />Start with a question or a SMILES string.</div>}</div></div></div></section>
 }
 
 export function CheckIcon() { return null }

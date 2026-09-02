@@ -1,0 +1,3 @@
+import Link from 'next/link'
+import { AuthForm } from '@/components/auth-form'
+export default function SignUpPage() { return <main className="mx-auto flex min-h-screen max-w-md items-center px-6 py-12"><section className="w-full rounded-2xl border bg-card p-8 shadow-sm"><p className="font-mono text-xs uppercase tracking-widest text-primary">ReactionAI</p><h1 className="mt-3 text-3xl font-bold">Start learning</h1><p className="mt-2 text-muted-foreground">Create a private notebook for your reaction questions.</p><div className="mt-8"><AuthForm mode="sign-up" /></div><p className="mt-6 text-center text-sm text-muted-foreground">Already have an account? <Link className="text-primary underline" href="/sign-in">Sign in</Link></p></section></main> }
