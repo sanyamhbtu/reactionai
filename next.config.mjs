@@ -6,12 +6,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      config.externals = [...(config.externals || []), 'paper', 'jsdom']
-    }
-    return config
-  },
 }
 
 export default nextConfig
