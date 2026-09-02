@@ -3,6 +3,7 @@
 import { ArrowRight, BookOpen, CheckCircle2, FlaskConical, ShieldCheck, Sparkles } from 'lucide-react'
 import { DnaHelix } from '@/components/dna-helix'
 import { ReactionTool } from '@/components/reactionai-tool'
+import { SessionNav } from '@/components/session-nav'
 
 const useCases = [
   ['Learn faster', 'Break down mechanisms, concepts, and unfamiliar molecules in clear language.'],
@@ -16,7 +17,7 @@ export default function Page() {
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8" aria-label="Main navigation">
         <a href="#top" className="flex items-center gap-3 text-lg font-bold tracking-tight text-primary"><span className="flex size-9 items-center justify-center rounded-md bg-primary text-primary-foreground"><FlaskConical className="size-5" /></span>ReactionAI</a>
         <div className="hidden items-center gap-8 text-sm font-medium text-muted-foreground md:flex"><a href="#how-it-works" className="hover:text-primary">How it works</a><a href="#use-cases" className="hover:text-primary">Use cases</a><a href="#workspace" className="hover:text-primary">Workspace</a></div>
-        <div className="flex items-center gap-3"><a href="/sign-in" className="hidden text-sm font-semibold text-muted-foreground hover:text-primary sm:block">Sign in</a><a href="#workspace" className="rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition hover:brightness-95">Open workspace</a></div>
+        <div className="flex items-center gap-3"><SessionNav /><a href="#workspace" className="rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition hover:brightness-95">Open workspace</a></div>
       </nav>
 
       <section className="border-y border-border bg-card">
