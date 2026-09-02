@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 import { saveReaction } from '@/app/actions/history'
-import { MoleculeEditor } from '@/components/molecule-editor'
+import dynamic from 'next/dynamic'
+
+const MoleculeEditor = dynamic(() => import('@/components/molecule-editor').then((module) => module.MoleculeEditor), { ssr: false })
 
 type Result = { answer: string }
 

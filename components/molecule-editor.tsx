@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { useState } from 'react'
 import type { Ketcher } from 'ketcher-core'
 import { IndigoProvider } from 'ketcher-react'
+
 import 'ketcher-react/dist/index.css'
 
 const Editor = dynamic(() => import('ketcher-react').then((module) => module.Editor), { ssr: false })
