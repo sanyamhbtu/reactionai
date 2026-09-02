@@ -4,10 +4,20 @@ import { useRouter } from 'next/navigation'
 import { authClient } from '@/lib/auth-client'
 
 export function SessionNav() {
-  const { data: session, isPending } = authClient.useSession()
+  const { data: userSession, isPending } = authClient.useSession()
   const router = useRouter()
-  if (isPending) return <div className="h-9 w-24" aria-hidden="true" />
-  if (!session?.user) return <a href="/sign-in" className="hidden text-sm font-semibold text-muted-foreground hover:text-primary sm:block">Sign in</a>
-  async function logout() { await authClient.signOut(); router.refresh(); router.push('/') }
+
+  async function logout() {
+    await authClient.signOut()
+    router.push('/')
+    router.refresh()
+  }
+
+  if (isPending) return <div className="h-5 w-16" aria-hidden="true" />
+  const user = userSession?.user
+  if (!user) {
+    return <a href="/sign-in" className="hidden text-sm font-semibold text-muted-foreground hover:text-primary sm:block">Sign in</a>
+  }
+
   return <div className="flex items-center gap-3"><a href="/dashboard" className="text-sm font-semibold text-muted-foreground hover:text-primary">Dashboard</a><button type="button" onClick={logout} className="hidden text-sm font-semibold text-muted-foreground hover:text-primary sm:block">Sign out</button></div>
 }
